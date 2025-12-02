@@ -58,7 +58,6 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
         setTimeout(() => {
             setStep('otp');
             setLoading(false);
-            // alert("Your Verification Code is: 123456"); // Testing වලට ලේසි වෙන්න
         }, 1000);
 
     } catch (error) {
@@ -84,7 +83,7 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
       }
   };
 
-  // 3. Payment Processing (BYPASSED FOR NOW)
+  // 3. Payment Processing
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -96,9 +95,6 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
     
     console.log("Dev Mode: Skipping PayHere...");
 
-    // මෙතනින් අපි Database එකට Order එක Save කරනවා (Pending විදියට)
-    // ඊට පස්සේ කෙලින්ම Success එකට යවනවා
-    
     try {
         const orderId = `ORD-${Date.now()}`; 
 
@@ -117,7 +113,6 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
 
         // B. Simulate Successful Payment Delay
         setTimeout(() => {
-            // ඇත්තටම PayHere එකෙන් එන Notify එක වෙනුවට අපි බොරුවට redirect කරනවා
             window.location.href = '/payment/success'; 
             setLoading(false);
         }, 1500);
@@ -189,7 +184,12 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] bg-[#0a0a0a] border-white/10 text-white shadow-2xl">
+      {/* RESPONSIVE UPDATE:
+         - w-[95%]: Mobile screens walata width eka adjust kala.
+         - max-h-[90vh]: Screen height eken 90% kata wada loku nowenna haduwa.
+         - overflow-y-auto: Content wadi unoth scroll wena widihata haduwa.
+      */}
+      <DialogContent className="sm:max-w-[425px] w-[95%] max-h-[90vh] overflow-y-auto bg-[#0a0a0a] border-white/10 text-white shadow-2xl rounded-xl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center">
             {step === 'email' && "Get Started"}

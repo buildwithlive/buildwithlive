@@ -13,7 +13,8 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-20">
           <div className="flex-shrink-0 cursor-pointer">
             <Link href="/">
-                <span className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
+                {/* Mobile walata font size poddak adu kala text overflow nowenna */}
+                <span className="text-xl sm:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
                 BUILD WITH LIVE
                 </span>
             </Link>
@@ -50,12 +51,13 @@ const Navbar = () => {
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="md:hidden bg-black/95 border-b border-white/10"
+          className="md:hidden bg-black/95 border-b border-white/10 shadow-xl"
         >
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 flex flex-col gap-2">
-            <a href="/#features" className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium">Features</a>
-            <Link href="/login" className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium">Member Login</Link>
-            <a href="/#pricing" className="text-blue-400 font-bold block px-3 py-2 rounded-md text-base">Buy Now</a>
+          <div className="px-4 pt-4 pb-6 space-y-3 flex flex-col gap-2">
+            <a href="/#features" onClick={() => setIsOpen(false)} className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium">Features</a>
+            <a href="/#preview" onClick={() => setIsOpen(false)} className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium">Inside the Book</a>
+            <Link href="/login" onClick={() => setIsOpen(false)} className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center gap-2"><User size={16}/> Member Login</Link>
+            <a href="/#pricing" onClick={() => setIsOpen(false)} className="text-blue-400 font-bold block px-3 py-2 rounded-md text-base bg-blue-900/10 border border-blue-500/20 text-center">Buy Now</a>
           </div>
         </motion.div>
       )}
