@@ -19,13 +19,12 @@ const ContactForm = () => {
     setTimeout(() => {
         setLoading(false);
         setSuccess(true);
-        // Reset success message after 5 seconds
         setTimeout(() => setSuccess(false), 5000);
     }, 1500);
   };
 
   return (
-    <section id="contact" className="py-24 bg-black relative overflow-hidden border-t border-white/5">
+    <section id="contact" className="py-16 md:py-24 bg-black relative overflow-hidden border-t border-white/5">
         {/* Background Gradients */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none">
             <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-900/10 rounded-full blur-[128px]" />
@@ -33,7 +32,7 @@ const ContactForm = () => {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
                 
                 {/* Text Content */}
                 <motion.div 
@@ -41,31 +40,32 @@ const ContactForm = () => {
                     whileInView={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.6 }}
                     viewport={{ once: true }}
+                    className="text-center lg:text-left"
                 >
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-900/30 border border-blue-500/30 mb-6">
                         <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
                         <span className="text-blue-300 text-xs font-bold tracking-wider uppercase">24/7 Support</span>
                     </div>
                     
-                    <h2 className="text-4xl md:text-5xl font-black text-white mb-6 leading-tight">
+                    <h2 className="text-3xl md:text-5xl font-black text-white mb-6 leading-tight">
                         Have Questions? <br/>
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-emerald-400">
                             Let's Talk.
                         </span>
                     </h2>
                     
-                    <p className="text-gray-400 text-lg mb-8 leading-relaxed">
+                    <p className="text-gray-400 text-base md:text-lg mb-8 leading-relaxed">
                         Whether you have questions about the book, need technical support, or just want to share your progress, our team is here to help you.
                     </p>
 
-                    <div className="space-y-6">
-                        <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="flex justify-center lg:justify-start">
+                        <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 w-full max-w-md">
                             <div className="p-3 rounded-xl bg-blue-600/20 text-blue-400">
                                 <Mail size={24} />
                             </div>
-                            <div>
+                            <div className="text-left">
                                 <h3 className="text-white font-bold mb-1">Email Us</h3>
-                                <p className="text-gray-400 text-sm">buildwithlive@gmail.com</p>
+                                <p className="text-gray-400 text-sm break-all">buildwithlive@gmail.com</p>
                                 <p className="text-gray-500 text-xs mt-1">Typical response time: 2 hours</p>
                             </div>
                         </div>
@@ -78,12 +78,9 @@ const ContactForm = () => {
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.2 }}
                     viewport={{ once: true }}
-                    className="bg-[#0a0a0a] border border-white/10 p-8 rounded-3xl shadow-2xl relative group"
+                    className="bg-[#0a0a0a] border border-white/10 p-6 md:p-8 rounded-3xl shadow-2xl relative group"
                 >
-                    {/* Glow Effect on Hover */}
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-3xl opacity-0 group-hover:opacity-20 transition duration-500 blur"></div>
-                    
-                    <form onSubmit={handleSubmit} className="relative space-y-6">
+                    <form onSubmit={handleSubmit} className="relative space-y-5">
                         <div className="grid gap-2">
                             <Label htmlFor="c-name" className="text-gray-300">Your Name</Label>
                             <div className="relative">

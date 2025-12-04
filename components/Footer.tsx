@@ -3,11 +3,11 @@ import Link from 'next/link';
 const Footer = () => {
     return (
         <footer className="bg-black py-12 border-t border-white/10 mt-auto">
-            <div className="max-w-7xl mx-auto px-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 text-center md:text-left">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-8 text-center sm:text-left">
                     <div>
                         <p className="text-white font-bold text-xl mb-4">BUILD WITH VIDEOS</p>
-                        <p className="text-gray-500 text-sm">The world's first live video bodybuilding book.</p>
+                        <p className="text-gray-500 text-sm leading-relaxed">The world&apos;s first live video bodybuilding book. Transform your training with real-time visual guidance.</p>
                     </div>
                     <div className="flex flex-col space-y-2">
                         <h4 className="text-white font-bold mb-2">Legal</h4>

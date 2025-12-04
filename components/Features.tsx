@@ -28,18 +28,18 @@ const Features = () => {
                 <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">Not Just a Book. <br/><span className="text-gray-500">It&apos;s a Personal Trainer.</span></h2>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
                 {features.map((feature, idx) => (
                     <motion.div 
                         key={idx}
                         whileHover={{ y: -10 }}
-                        className="p-8 rounded-3xl bg-gray-900/50 border border-white/5 hover:border-blue-500/30 transition-all duration-300 group"
+                        className="p-6 md:p-8 rounded-3xl bg-gray-900/50 border border-white/5 hover:border-blue-500/30 transition-all duration-300 group"
                     >
                         <div className="mb-6 p-4 bg-gray-800 rounded-2xl w-fit group-hover:bg-gray-700 transition-colors">
                             {feature.icon}
                         </div>
                         <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
-                        <p className="text-gray-400 leading-relaxed">{feature.desc}</p>
+                        <p className="text-gray-400 leading-relaxed text-sm md:text-base">{feature.desc}</p>
                     </motion.div>
                 ))}
             </div>
