@@ -53,25 +53,34 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
     setLoading(true);
 
     try {
-        // Check if user already purchased
-        const res = await fetch('/api/auth/check-status', {
+        // A. Check if user already purchased
+        const statusRes = await fetch('/api/auth/check-status', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: formData.email })
         });
-        const data = await res.json();
+        const statusData = await statusRes.json();
 
-        if (data.hasAccess) {
+        if (statusData.hasAccess) {
             alert("You already own this book! Redirecting to login...");
             router.push('/login');
             return;
         }
 
-        // Simulate OTP Sending (Since we don't have a real mail server yet)
-        setTimeout(() => {
-            setStep('otp');
-            setLoading(false);
-        }, 1000);
+        // B. Send Real OTP (NEW CODE) -------------------------
+        const otpRes = await fetch('/api/auth/send-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: formData.email })
+        });
+        
+        if (!otpRes.ok) {
+            throw new Error("Failed to send verification code.");
+        }
+        // -----------------------------------------------------
+
+        setStep('otp');
+        setLoading(false);
 
     } catch (err) {
         console.error(err);
@@ -81,19 +90,33 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
   };
 
   // 2. Step: Verify OTP
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
       e.preventDefault();
       setError('');
       setLoading(true);
 
-      // Dev OTP Code is 123456
-      if (otpInput === "123456") {
-          setTimeout(() => {
+      try {
+          // Verify with Backend API ---------------------------
+          const res = await fetch('/api/auth/verify-otp', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                  email: formData.email, 
+                  code: otpInput 
+              })
+          });
+          const data = await res.json();
+
+          if (data.valid) {
               setStep('details'); 
-              setLoading(false);
-          }, 800);
-      } else {
-          setError("Invalid Code! Please try again.");
+          } else {
+              setError(data.message || "Invalid Code! Please try again.");
+          }
+          // ---------------------------------------------------
+          
+      } catch (err) {
+          setError("Verification failed. Try again.");
+      } finally {
           setLoading(false);
       }
   };
