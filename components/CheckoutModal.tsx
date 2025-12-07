@@ -5,10 +5,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Lock, CreditCard, Loader2, Mail, ArrowRight, ShieldCheck, User, Phone } from 'lucide-react';
+import { Lock, CreditCard, Loader2, Mail, ArrowRight, ShieldCheck, User, Phone, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-// PayHere Types definition
+// PayHere Global Object
 declare global {
   interface Window {
     payhere: any;
@@ -18,9 +18,10 @@ declare global {
 const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   
-  // Steps: 'email' -> 'otp' -> 'details' -> 'payment'
+  // State Management
   const [step, setStep] = useState<'email' | 'otp' | 'details'>('email');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [otpInput, setOtpInput] = useState('');
   
   const [formData, setFormData] = useState({
@@ -32,126 +33,122 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
     country: 'Global'
   });
 
-  const amount = "20.00"; // USD Price
+  const amount = "20.00"; // Live Price in USD
   const currency = "USD";
 
-  // 1. Email Verification Step
+  // --- VALIDATION FUNCTIONS ---
+  const isValidEmail = (email: string) => /\S+@\S+\.\S+/.test(email);
+  const isValidPhone = (phone: string) => /^\+?[0-9]{9,15}$/.test(phone); // Basic international format
+
+  // 1. Step: Check Email & Status
   const handleEmailCheck = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
+    if (!isValidEmail(formData.email)) {
+        setError("Please enter a valid email address.");
+        return;
+    }
+
     setLoading(true);
 
     try {
-        // Check if user already bought the book
+        // Check if user already purchased
         const res = await fetch('/api/auth/check-status', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: formData.email })
         });
         const data = await res.json();
 
         if (data.hasAccess) {
-            alert("You have already purchased this book! Redirecting to Login...");
+            alert("You already own this book! Redirecting to login...");
             router.push('/login');
             return;
         }
 
-        // Simulate Sending OTP (Development Mode)
+        // Simulate OTP Sending (Since we don't have a real mail server yet)
         setTimeout(() => {
             setStep('otp');
             setLoading(false);
         }, 1000);
 
-    } catch (error) {
-        alert("Something went wrong. Please try again.");
+    } catch (err) {
+        console.error(err);
+        setError("Connection failed. Please check your internet.");
         setLoading(false);
     }
   };
 
-  // 2. OTP Verification Step
+  // 2. Step: Verify OTP
   const handleVerifyOtp = (e: React.FormEvent) => {
       e.preventDefault();
+      setError('');
       setLoading(true);
 
-      // Testing OTP code: 123456
+      // Dev OTP Code is 123456
       if (otpInput === "123456") {
           setTimeout(() => {
-              setStep('details'); // Go to Payment Details
+              setStep('details'); 
               setLoading(false);
-          }, 1000);
+          }, 800);
       } else {
-          alert("Invalid Code! Try 123456 (Dev Code)");
+          setError("Invalid Code! Please try again.");
           setLoading(false);
       }
   };
 
-  // 3. Payment Processing
+  // 3. Step: Process Payment (LIVE MODE)
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setError('');
 
-    // ============================================================
-    // DEVELOPMENT MODE: PAYHERE BYPASS (PayHere Commented Out)
-    // PayHere Active වන තුරු කෙලින්ම Success Page එකට යැවීම.
-    // ============================================================
-    
-    console.log("Dev Mode: Skipping PayHere...");
-
-    try {
-        const orderId = `ORD-${Date.now()}`; 
-
-        // A. Save Pending Order to Database
-        await fetch('/api/orders/create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                name: formData.name,
-                email: formData.email,
-                phone: formData.phone,
-                order_id: orderId,
-                amount: amount
-            })
-        });
-
-        // B. Simulate Successful Payment Delay
-        setTimeout(() => {
-            window.location.href = '/payment/success'; 
-            setLoading(false);
-        }, 1500);
-
-    } catch (error) {
-        console.error("Error saving order:", error);
-        alert("Something went wrong with the database.");
-        setLoading(false);
+    if (!formData.name || !isValidPhone(formData.phone)) {
+        setError("Please enter a valid name and phone number.");
+        return;
     }
 
-    return; // මෙතනින් පහළට යන එක නවත්වනවා (PayHere කෝඩ් එකට යන්නේ නෑ)
+    setLoading(true);
 
-    // ============================================================
-    // REAL PAYHERE LOGIC (Commented Out for Future Use)
-    // ============================================================
-    /*
     try {
-      const orderId = `Order_${Date.now()}`;
-      const res = await fetch('/api/payhere-hash', {
+      const orderId = `ORD-${Date.now()}`;
+
+      // A. Save Order to Database (Status: PENDING)
+      const saveRes = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            order_id: orderId,
+            amount: amount
+        })
+      });
+
+      if (!saveRes.ok) throw new Error("Order initialization failed.");
+
+      // B. Generate Security Hash
+      const hashRes = await fetch('/api/payhere-hash', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ order_id: orderId, amount, currency }),
       });
-      const { hash } = await res.json();
+      const { hash } = await hashRes.json();
 
       if (!hash) {
-        alert("Payment Error: Could not generate security hash.");
-        setLoading(false);
-        return;
+        throw new Error("Security hash generation failed.");
       }
 
+      // C. PayHere Payment Object (LIVE)
       const payment = {
-        sandbox: true,
+        sandbox: false, // Set to FALSE for Live Payments
         merchant_id: process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID,
         return_url: `${window.location.origin}/payment/success`,
         cancel_url: `${window.location.origin}/`,
         notify_url: `${window.location.origin}/api/payhere-notify`,
         order_id: orderId,
-        items: "Build With Live E-Book",
+        items: "Build With Live - Full Access",
         amount: amount,
         currency: currency,
         hash: hash,
@@ -162,21 +159,38 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
         address: formData.address,
         city: formData.city,
         country: formData.country,
-        custom_1: formData.name,
-        custom_2: formData.email,
+        custom_1: formData.name, // Pass name for notify handling
+        custom_2: formData.email, // Pass email for notify handling
       };
 
+      // D. Trigger PayHere
       if (typeof window !== 'undefined' && window.payhere) {
         window.payhere.startPayment(payment);
+        
+        window.payhere.onCompleted = function onCompleted(oid: string) {
+            console.log("Payment Success. OrderID:" + oid);
+            window.location.href = '/payment/success';
+        };
+
+        window.payhere.onDismissed = function onDismissed() {
+            setLoading(false);
+        };
+
+        window.payhere.onError = function onError(error: string) {
+            console.error("PayHere Error:", error);
+            setError("Payment Failed: " + error);
+            setLoading(false);
+        };
       } else {
-        alert("PayHere SDK not loaded. Refresh page.");
+        alert("Payment Gateway loading... please wait a moment and try again.");
         setLoading(false);
       }
-    } catch (error) {
-      console.error("Payment Start Error:", error);
+
+    } catch (err: any) {
+      console.error("Payment Start Error:", err);
+      setError(err.message || "Something went wrong.");
       setLoading(false);
     }
-    */
   };
 
   return (
@@ -184,24 +198,27 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      {/* RESPONSIVE UPDATE:
-         - w-[95%]: Mobile screens walata width eka adjust kala.
-         - max-h-[90vh]: Screen height eken 90% kata wada loku nowenna haduwa.
-         - overflow-y-auto: Content wadi unoth scroll wena widihata haduwa.
-      */}
-      <DialogContent className="sm:max-w-[425px] w-[95%] max-h-[90vh] overflow-y-auto bg-[#0a0a0a] border-white/10 text-white shadow-2xl rounded-xl">
+      <DialogContent className="sm:max-w-[425px] w-[95%] bg-[#0a0a0a] border-white/10 text-white shadow-2xl rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-center">
-            {step === 'email' && "Get Started"}
-            {step === 'otp' && "Verify Email"}
-            {step === 'details' && "Secure Checkout"}
+          <DialogTitle className="text-2xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
+            {step === 'email' && "Start Your Journey"}
+            {step === 'otp' && "Verify Your Email"}
+            {step === 'details' && "Final Checkout"}
           </DialogTitle>
           <DialogDescription className="text-center text-gray-400">
             {step === 'email' && "Enter your email to verify eligibility."}
-            {step === 'otp' && `We sent a code to ${formData.email}. (Use 123456)`}
-            {step === 'details' && "Final step to unlock your access."}
+            {step === 'otp' && `We sent a code to ${formData.email}. (Dev Code: 123456)`}
+            {step === 'details' && "Secure your copy now."}
           </DialogDescription>
         </DialogHeader>
+
+        {/* Error Message Display */}
+        {error && (
+            <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-lg flex items-center gap-2 text-red-400 text-sm">
+                <AlertCircle size={16} />
+                <span>{error}</span>
+            </div>
+        )}
 
         {/* STEP 1: Email Entry */}
         {step === 'email' && (
@@ -211,17 +228,16 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
                     <div className="relative">
                         <Mail className="absolute left-3 top-3 text-gray-500" size={18} />
                         <Input 
-                            id="email" 
-                            type="email" 
-                            placeholder="you@example.com" 
-                            className="bg-gray-900 border-gray-700 text-white pl-10 h-12 focus:border-blue-500"
+                            id="email" type="email" placeholder="you@example.com" 
+                            className="bg-gray-900 border-gray-700 text-white pl-10 h-12 focus:border-blue-500 rounded-xl"
                             required
+                            value={formData.email}
                             onChange={(e) => setFormData({...formData, email: e.target.value})}
                         />
                     </div>
                 </div>
-                <Button type="submit" disabled={loading} className="w-full h-12 bg-blue-600 hover:bg-blue-700 font-bold text-lg">
-                    {loading ? <Loader2 className="animate-spin" /> : <>Continue <ArrowRight size={18} className="ml-2"/></>}
+                <Button type="submit" disabled={loading} className="w-full h-12 bg-blue-600 hover:bg-blue-700 font-bold text-lg rounded-xl transition-all">
+                    {loading ? <Loader2 className="animate-spin" /> : <>Next Step <ArrowRight size={18} className="ml-2"/></>}
                 </Button>
             </form>
         )}
@@ -232,23 +248,21 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
                 <div className="grid gap-2">
                     <Label className="text-gray-300">Verification Code</Label>
                     <div className="relative">
-                        <ShieldCheck className="absolute left-3 top-3 text-green-500" size={18} />
+                        <ShieldCheck className="absolute left-3 top-3 text-emerald-500" size={18} />
                         <Input 
-                            type="text" 
-                            placeholder="Enter 6-digit code" 
-                            className="bg-gray-900 border-gray-700 text-white pl-10 h-12 text-center letter-spacing-2 font-mono text-xl"
-                            maxLength={6}
+                            type="text" placeholder="123456" maxLength={6}
+                            className="bg-gray-900 border-gray-700 text-white pl-10 h-12 text-center text-xl tracking-widest font-mono rounded-xl focus:border-emerald-500"
                             required
                             value={otpInput}
                             onChange={(e) => setOtpInput(e.target.value)}
                         />
                     </div>
                 </div>
-                <Button type="submit" disabled={loading} className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 font-bold text-lg">
-                    {loading ? <Loader2 className="animate-spin" /> : "Verify & Continue"}
+                <Button type="submit" disabled={loading} className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 font-bold text-lg rounded-xl transition-all">
+                    {loading ? <Loader2 className="animate-spin" /> : "Verify Code"}
                 </Button>
-                <button type="button" onClick={() => setStep('email')} className="text-xs text-gray-500 hover:text-white underline text-center">
-                    Change Email
+                <button type="button" onClick={() => {setStep('email'); setError('');}} className="text-xs text-gray-500 hover:text-white underline text-center mt-2">
+                    Change Email Address
                 </button>
             </form>
         )}
@@ -256,41 +270,50 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
         {/* STEP 3: Payment Details */}
         {step === 'details' && (
             <form onSubmit={handlePayment} className="grid gap-4 py-2">
-                <div className="p-3 bg-blue-900/20 border border-blue-500/20 rounded-lg flex items-center justify-between mb-2">
+                <div className="p-4 bg-blue-900/10 border border-blue-500/20 rounded-xl flex items-center justify-between mb-2">
                     <span className="text-sm text-blue-200">Total to Pay:</span>
-                    <span className="text-xl font-bold text-blue-400">$20.00</span> 
+                    <span className="text-2xl font-black text-blue-400">$20.00</span> 
                 </div>
 
                 <div className="grid gap-2">
                     <Label className="text-gray-300">Full Name</Label>
-                    <Input 
-                        placeholder="Your Name" 
-                        className="bg-gray-900 border-gray-700 text-white h-11"
-                        required
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    />
+                    <div className="relative">
+                        <User className="absolute left-3 top-3 text-gray-500" size={18} />
+                        <Input 
+                            placeholder="Your Name" 
+                            className="bg-gray-900 border-gray-700 text-white pl-10 h-11 rounded-lg"
+                            required
+                            value={formData.name}
+                            onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        />
+                    </div>
                 </div>
                 <div className="grid gap-2">
                     <Label className="text-gray-300">Phone Number</Label>
-                    <Input 
-                        placeholder="+94 77 ..." 
-                        className="bg-gray-900 border-gray-700 text-white h-11"
-                        required
-                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    />
+                    <div className="relative">
+                        <Phone className="absolute left-3 top-3 text-gray-500" size={18} />
+                        <Input 
+                            placeholder="+94 77 123 4567" 
+                            type="tel"
+                            className="bg-gray-900 border-gray-700 text-white pl-10 h-11 rounded-lg"
+                            required
+                            value={formData.phone}
+                            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                        />
+                    </div>
                 </div>
 
-                <Button type="submit" disabled={loading} className="w-full mt-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold h-12 text-lg">
+                <Button type="submit" disabled={loading} className="w-full mt-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold h-14 text-lg rounded-xl shadow-lg shadow-blue-900/20">
                     {loading ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
+                    <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...</>
                     ) : (
                     <><CreditCard className="mr-2 h-5 w-5" /> Pay $20.00 Now</>
                     )}
                 </Button>
                 
-                <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
-                    <Lock size={12} />
-                    <span>256-bit Secure Payment</span>
+                <div className="flex items-center justify-center gap-2 text-[10px] text-gray-500 uppercase tracking-wider">
+                    <Lock size={10} />
+                    <span>256-bit Secure SSL Payment by PayHere</span>
                 </div>
             </form>
         )}
