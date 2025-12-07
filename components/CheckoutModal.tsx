@@ -38,9 +38,9 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
 
   // --- VALIDATION FUNCTIONS ---
   const isValidEmail = (email: string) => /\S+@\S+\.\S+/.test(email);
-  const isValidPhone = (phone: string) => /^\+?[0-9]{9,15}$/.test(phone); // Basic international format
+  const isValidPhone = (phone: string) => /^\+?[0-9]{9,15}$/.test(phone);
 
-  // 1. Step: Check Email & Status
+  // 1. Step: Check Email & Send Real OTP
   const handleEmailCheck = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -59,6 +59,9 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: formData.email })
         });
+
+        if (!statusRes.ok) throw new Error("Connection Error. Please check settings.");
+        
         const statusData = await statusRes.json();
 
         if (statusData.hasAccess) {
@@ -67,36 +70,38 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
             return;
         }
 
-        // B. Send Real OTP (NEW CODE) -------------------------
+        // B. Send Real OTP (New Implementation)
         const otpRes = await fetch('/api/auth/send-otp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: formData.email })
         });
         
+        const otpData = await otpRes.json();
+
         if (!otpRes.ok) {
-            throw new Error("Failed to send verification code.");
+            throw new Error(otpData.error || "Failed to send verification code.");
         }
-        // -----------------------------------------------------
 
+        // Success -> Go to OTP Step
         setStep('otp');
-        setLoading(false);
 
-    } catch (err) {
+    } catch (err: any) {
         console.error(err);
-        setError("Connection failed. Please check your internet.");
+        setError(err.message || "Connection failed. Please check your internet.");
+    } finally {
         setLoading(false);
     }
   };
 
-  // 2. Step: Verify OTP
+  // 2. Step: Verify OTP (Real-Time)
   const handleVerifyOtp = async (e: React.FormEvent) => {
       e.preventDefault();
       setError('');
       setLoading(true);
 
       try {
-          // Verify with Backend API ---------------------------
+          // Verify with Backend API
           const res = await fetch('/api/auth/verify-otp', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -105,17 +110,22 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
                   code: otpInput 
               })
           });
+          
           const data = await res.json();
+
+          if (!res.ok) {
+             throw new Error(data.message || "Verification failed");
+          }
 
           if (data.valid) {
               setStep('details'); 
           } else {
               setError(data.message || "Invalid Code! Please try again.");
           }
-          // ---------------------------------------------------
           
-      } catch (err) {
-          setError("Verification failed. Try again.");
+      } catch (err: any) {
+          console.error(err);
+          setError(err.message || "Verification failed. Try again.");
       } finally {
           setLoading(false);
       }
@@ -165,7 +175,7 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
 
       // C. PayHere Payment Object (LIVE)
       const payment = {
-        sandbox: false, // Set to FALSE for Live Payments
+        sandbox: false, // LIVE MODE ACTIVATED
         merchant_id: process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID,
         return_url: `${window.location.origin}/payment/success`,
         cancel_url: `${window.location.origin}/`,
@@ -182,8 +192,8 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
         address: formData.address,
         city: formData.city,
         country: formData.country,
-        custom_1: formData.name, // Pass name for notify handling
-        custom_2: formData.email, // Pass email for notify handling
+        custom_1: formData.name,
+        custom_2: formData.email,
       };
 
       // D. Trigger PayHere
@@ -230,7 +240,7 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
           </DialogTitle>
           <DialogDescription className="text-center text-gray-400">
             {step === 'email' && "Enter your email to verify eligibility."}
-            {step === 'otp' && `We sent a code to ${formData.email}. (Dev Code: 123456)`}
+            {step === 'otp' && `We sent a code to ${formData.email}. check your inbox.`}
             {step === 'details' && "Secure your copy now."}
           </DialogDescription>
         </DialogHeader>
@@ -273,7 +283,7 @@ const CheckoutModal = ({ children }: { children: React.ReactNode }) => {
                     <div className="relative">
                         <ShieldCheck className="absolute left-3 top-3 text-emerald-500" size={18} />
                         <Input 
-                            type="text" placeholder="123456" maxLength={6}
+                            type="text" placeholder="------" maxLength={6}
                             className="bg-gray-900 border-gray-700 text-white pl-10 h-12 text-center text-xl tracking-widest font-mono rounded-xl focus:border-emerald-500"
                             required
                             value={otpInput}

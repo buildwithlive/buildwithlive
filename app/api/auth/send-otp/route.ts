@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 
     // 4. Email එක යවමු (Resend)
     const { error: emailError } = await resend.emails.send({
-      from: 'Build With Live <onboarding@resend.dev>', // Domain එක Verify කරලා නැත්නම් 'onboarding@resend.dev' තියන්න
+      from: 'Build With Live <auth@buildwithvideos.com>',
       to: email,
       subject: 'Your Verification Code - Build With Live',
       html: `
