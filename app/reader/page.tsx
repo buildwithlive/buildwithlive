@@ -1,15 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
-import { BookOpen, Home, LogOut, ChevronRight, PlayCircle, Menu, X, Download } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { BookOpen, Home, LogOut, ChevronRight, PlayCircle, Menu, X, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 export default function ReaderPage() {
+  const router = useRouter();
   const [activeChapter, setActiveChapter] = useState('Introduction');
+  const [activePage, setActivePage] = useState(2); // පෙරනිමියෙන් පිටු අංක 2 (Intro)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Chapters List (ඔයාගේ පොතේ පිටු අංක අනුව)
+  // PDF එක Deep Read කරලා ගත්ත පාඩම් මාලාව සහ පිටු අංක
   const chapters = [
     { id: 'intro', title: 'Introduction', page: 2 },
     { id: 'anatomy', title: 'Full Body Anatomy', page: 3 },
@@ -19,11 +22,39 @@ export default function ReaderPage() {
     { id: 'chest', title: 'Chest Development', page: 130 },
     { id: 'back', title: 'Back Width & Thickness', page: 181 },
     { id: 'legs', title: 'Legs (Quads & Hams)', page: 241 },
+    { id: 'cardio', title: 'Cardio & Burpees', page: 350 }, // PDF එකේ අන්තිම හරියෙන් ගත්ත කොටස
   ];
 
-  // Sidebar Component (Mobile & Desktop දෙකටම පාවිච්චි කරන්න)
+  // 1. Security: Disable Right Click
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+  };
+
+  // 2. Security: Disable Keyboard Shortcuts (Ctrl+S, Ctrl+P, PrintScreen)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.ctrlKey && (e.key === 's' || e.key === 'p' || e.key === 'u')) || // Save, Print, Source
+        e.key === 'PrintScreen'
+      ) {
+        e.preventDefault();
+        alert("Protected Content: Screenshots and downloading are disabled.");
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // පාඩමක් Click කළාම PDF එකේ පිටුව මාරු කරන Function එක
+  const handleChapterChange = (chapter: typeof chapters[0]) => {
+    setActiveChapter(chapter.title);
+    setActivePage(chapter.page); // PDF පිටුව අප්ඩේට් කරනවා
+    setIsMobileMenuOpen(false);
+  };
+
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-[#0a0a0a] border-r border-white/10">
+    <div className="flex flex-col h-full bg-[#0a0a0a] border-r border-white/10 select-none">
       <div className="p-6 border-b border-white/10 flex items-center justify-between">
         <div>
             <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 cursor-pointer">
@@ -31,21 +62,17 @@ export default function ReaderPage() {
             </h1>
             <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest">Premium Reader</p>
         </div>
-        {/* Mobile Close Button */}
         <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-gray-400">
             <X size={24} />
         </button>
       </div>
 
       <nav className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-thin scrollbar-thumb-gray-800">
-        <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-2">Table of Contents</div>
+        <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-2">Content Index</div>
         {chapters.map((chapter) => (
           <button
             key={chapter.id}
-            onClick={() => {
-                setActiveChapter(chapter.title);
-                setIsMobileMenuOpen(false); // Mobile එකේදී Click කළාම Menu එක වැහෙනවා
-            }}
+            onClick={() => handleChapterChange(chapter)}
             className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${
               activeChapter === chapter.title 
                 ? 'bg-blue-600/10 text-blue-400 border border-blue-500/30' 
@@ -73,14 +100,17 @@ export default function ReaderPage() {
   );
 
   return (
-    <div className="flex h-screen bg-[#050505] text-white overflow-hidden font-sans">
+    <div 
+      className="flex h-screen bg-[#050505] text-white overflow-hidden font-sans select-none" 
+      onContextMenu={handleContextMenu} // මුළු පිටුවෙම Right Click තහනම්
+    >
       
-      {/* Desktop Sidebar (Hidden on Mobile) */}
+      {/* Desktop Sidebar */}
       <aside className="hidden md:block w-80 h-full">
         <SidebarContent />
       </aside>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Menu */}
       <AnimatePresence>
         {isMobileMenuOpen && (
             <>
@@ -99,10 +129,10 @@ export default function ReaderPage() {
         )}
       </AnimatePresence>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <main className="flex-1 flex flex-col h-full relative w-full">
         
-        {/* Top Header */}
+        {/* Header */}
         <header className="h-16 bg-[#0a0a0a]/90 backdrop-blur border-b border-white/10 flex items-center justify-between px-4 md:px-8 z-10">
             <div className="flex items-center gap-4">
                 <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden p-2 text-gray-300 hover:text-white bg-white/5 rounded-lg">
@@ -118,49 +148,53 @@ export default function ReaderPage() {
             <div className="flex items-center gap-3">
                 <span className="hidden md:inline-flex px-3 py-1 bg-green-500/10 text-green-400 text-xs font-bold rounded-full border border-green-500/20 items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                    Access Granted
+                    Live Access
                 </span>
             </div>
         </header>
 
-        {/* PDF Viewer Container */}
+        {/* PDF Viewer Area */}
         <div className="flex-1 bg-[#111] p-0 md:p-6 overflow-hidden flex flex-col relative">
             
-            {/* The PDF Viewer */}
             <div className="flex-1 md:rounded-2xl md:border border-white/10 overflow-hidden shadow-2xl relative bg-gray-900 w-full h-full">
                 
-                {/* PDF Loading / Missing Error Handler */}
+                {/* KEY CHANGE: #page={activePage} දාලා තියෙන්නේ.
+                   Sidebar එකේ Button එක එබුවම මේක මාරු වෙලා අදාල පිටුව පෙන්නනවා.
+                   #toolbar=0 & navpanes=0 මගින් Download Button එක හැංගෙනවා.
+                */}
                 <object 
-                    data="/book.pdf#toolbar=0&navpanes=0&scrollbar=0" 
+                    key={activePage} // Key එක වෙනස් වුනාම Component එක Refresh වෙලා අලුත් පිටුවට යනවා
+                    data={`/book.pdf#page=${activePage}&toolbar=0&navpanes=0&scrollbar=0&view=FitH`} 
                     type="application/pdf" 
                     className="w-full h-full block"
                 >
-                    {/* This shows ONLY if PDF fails to load (e.g., on some mobile browsers) */}
+                    {/* Fallback for Non-PDF Browsers (Security: No Download Link Here) */}
                     <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-4">
                         <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center">
-                            <BookOpen className="text-gray-500" size={32} />
+                            <ShieldAlert className="text-red-500" size={32} />
                         </div>
-                        <h3 className="text-xl font-bold text-white">Preview Not Available</h3>
+                        <h3 className="text-xl font-bold text-white">Secure Viewer Required</h3>
                         <p className="text-gray-400 max-w-sm">
-                            Your browser doesn't support embedded PDFs, or the file is missing.
+                            Please use a modern browser (Chrome/Edge/Safari) to view this protected content.
                         </p>
-                        <a 
-                            href="/book.pdf" 
-                            target="_blank"
-                            download 
-                            className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold flex items-center gap-2 transition-all"
-                        >
-                            <Download size={18} /> Download Book
-                        </a>
                     </div>
                 </object>
 
-                {/* Security Watermark (Overlay) */}
-                <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-20 overflow-hidden">
-                    <div className="rotate-[-45deg] text-5xl md:text-8xl font-black text-white/5 whitespace-nowrap select-none">
-                        BUILD WITH LIVE • PRIVATE
+                {/* Security Watermark - Screenshot වලින් ආරක්ෂා වෙන්න */}
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-20 overflow-hidden opacity-10">
+                    <div className="rotate-[-45deg] grid grid-cols-2 gap-20">
+                        {/* වතුර සලකුණ තැන් කිහිපයකම පෙන්වීම */}
+                        {Array.from({ length: 8 }).map((_, i) => (
+                             <div key={i} className="text-4xl font-black text-white whitespace-nowrap select-none">
+                                PRIVATE • DO NOT COPY
+                             </div>
+                        ))}
                     </div>
                 </div>
+                
+                {/* Transparent Overlay to block direct interactions if needed (Optional) */}
+                {/* <div className="absolute inset-0 z-10 bg-transparent" onContextMenu={(e) => e.preventDefault()} /> */}
+
             </div>
         </div>
       </main>
