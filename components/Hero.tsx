@@ -44,18 +44,9 @@ const Hero = () => {
             <div className="w-full sm:w-auto">
               <CheckoutModal>
                   <button className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-500/25 transition-all transform hover:scale-105 flex items-center justify-center gap-2">
-                    Start Training Now <ArrowRight size={20} />
+                    Let's Start Now. <ArrowRight size={20} />
                   </button>
               </CheckoutModal>
-            </div>
-
-            <div className="flex items-center gap-2 text-gray-400 text-sm mt-2 sm:mt-0">
-              <div className="flex -space-x-2">
-                {[1,2,3,4].map((i) => (
-                  <div key={i} className="w-8 h-8 rounded-full bg-gray-700 border-2 border-black flex items-center justify-center text-xs text-white font-bold">U{i}</div>
-                ))}
-              </div>
-              <span className="font-medium">Joined by 1,000+ Athletes</span>
             </div>
           </div>
         </motion.div>

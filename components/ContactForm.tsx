@@ -42,11 +42,6 @@ const ContactForm = () => {
                     viewport={{ once: true }}
                     className="text-center lg:text-left"
                 >
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-900/30 border border-blue-500/30 mb-6">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                        <span className="text-blue-300 text-xs font-bold tracking-wider uppercase">24/7 Support</span>
-                    </div>
-                    
                     <h2 className="text-3xl md:text-5xl font-black text-white mb-6 leading-tight">
                         Have Questions? <br/>
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-emerald-400">
