@@ -9,9 +9,18 @@ const supabase = createClient(
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, email, phone, order_id, amount } = body;
+    const { 
+      name, 
+      email, 
+      phone, 
+      country,           // Aluth
+      youtube_channel,   // Aluth
+      is_google_drive_active, // Aluth
+      order_id, 
+      amount 
+    } = body;
 
-    // Insert pending order
+    // Insert pending order with new fields
     const { data, error } = await supabase
       .from('orders')
       .insert([
@@ -20,6 +29,9 @@ export async function POST(req: Request) {
           name, 
           email, 
           phone, 
+          country,
+          youtube_channel,
+          is_google_drive_active,
           amount, 
           status: 'PENDING' 
         }
